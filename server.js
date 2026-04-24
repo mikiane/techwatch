@@ -22,6 +22,9 @@ const FEEDS = [
 
 const TECH_KW = /\bai\b|artificial|openai|gpt|llm|chip|semiconductor|quantum|cyber|hack|data|cloud|robot|automat|drone|starlink|spacex|tesla|apple|google|microsoft|meta|nvidia|crypto|blockchain|saas/i;
 const GEO_KW = /sanction|war|nato|ukraine|china|taiwan|tariff|trade|regulation|eu\b|congress|pentagon|military|nuclear|sovereignty|border|diplomacy|geopolit|election|coup|embargo/i;
+const generateMessageRateLimits = new Map();
+const GENERATE_MESSAGE_LIMIT = 10;
+const GENERATE_MESSAGE_WINDOW_MS = 60 * 1000;
 
 function classify(title, summary, feedCat) {
   const text = `${title} ${summary}`;
@@ -30,6 +33,44 @@ function classify(title, summary, feedCat) {
   if (isTech && isGeo) return 'tech-geo';
   if (isGeo) return 'geo';
   return 'tech';
+}
+
+function stripHtmlTags(value) {
+  return value.replace(/<[^>]*>/g, '');
+}
+
+function cleanText(value, maxLength) {
+  return stripHtmlTags(value).trim().slice(0, maxLength);
+}
+
+function escapePromptValue(value) {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$')
+    .replace(/{/g, '\\{')
+    .replace(/}/g, '\\}')
+    .replace(/\r?\n/g, '\\n');
+}
+
+function getClientIp(req) {
+  return req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+}
+
+function checkGenerateMessageRateLimit(req) {
+  const now = Date.now();
+  const ip = getClientIp(req);
+  const current = generateMessageRateLimits.get(ip);
+
+  if (!current || now - current.windowStart >= GENERATE_MESSAGE_WINDOW_MS) {
+    generateMessageRateLimits.set(ip, { count: 1, windowStart: now });
+    return true;
+  }
+
+  if (current.count >= GENERATE_MESSAGE_LIMIT) return false;
+
+  current.count += 1;
+  return true;
 }
 
 let cachedNews = [];
@@ -83,11 +124,28 @@ app.get('/api/news', async (req, res) => {
 
 // API: generate Club IA message
 app.post('/api/generate-message', async (req, res) => {
-  const { title, summary, url } = req.body;
-  if (!title || !url) return res.status(400).json({ error: 'title and url required' });
+  if (!checkGenerateMessageRateLimit(req)) {
+    return res.status(429).json({ error: 'Rate limit exceeded: maximum 10 requests per minute' });
+  }
+
+  const { title, summary, url } = req.body || {};
+  if (typeof title !== 'string' || typeof summary !== 'string' || typeof url !== 'string') {
+    return res.status(400).json({ error: 'Invalid input: title, summary and url must be strings' });
+  }
+
+  const cleanTitle = cleanText(title, 500);
+  const cleanSummary = cleanText(summary, 1000);
+  const cleanUrl = cleanText(url, url.length);
+
+  if (!cleanTitle || !cleanUrl) return res.status(400).json({ error: 'title and url required' });
+  if (!cleanUrl.startsWith('http')) return res.status(400).json({ error: 'Invalid url: must start with http' });
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
+
+  const safeTitle = escapePromptValue(cleanTitle);
+  const safeSummary = escapePromptValue(cleanSummary);
+  const safeUrl = escapePromptValue(cleanUrl);
 
   const prompt = `Tu es Michel, fondateur d'un club IA. Tu partages des news tech/géopolitique avec ta communauté.
 
@@ -100,9 +158,9 @@ Règles STRICTES:
 - Pas de hashtags, pas d'emoji excessifs (1 max au début si pertinent)
 
 Article:
-Titre: ${title}
-Résumé: ${summary}
-URL: ${url}
+Titre: ${safeTitle}
+Résumé: ${safeSummary}
+URL: ${safeUrl}
 
 Génère le message:`;
 
@@ -114,14 +172,25 @@ Génère le message:`;
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 300,
         temperature: 0.8,
       }),
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `OpenAI request failed (${response.status}): ${response.statusText || 'API error'}` });
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      return res.status(502).json({ error: 'OpenAI returned an invalid JSON response' });
+    }
+
     if (data.error) return res.status(500).json({ error: data.error.message });
 
     const message = data.choices?.[0]?.message?.content?.trim() || '';
