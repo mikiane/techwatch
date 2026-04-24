@@ -8,22 +8,30 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
     
-    header { background: #161b22; border-bottom: 1px solid #30363d; padding: 1.2rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-    h1 { font-size: 1.4rem; color: #58a6ff; }
-    h1 span { color: #c9d1d9; font-weight: 300; }
-    .stats { color: #8b949e; font-size: 0.85rem; }
+    header { background: linear-gradient(135deg, #0b5bd3 0%, #4f46e5 52%, #7c3aed 100%); border-bottom: 1px solid rgba(255,255,255,0.16); padding: 1.35rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; box-shadow: 0 14px 38px rgba(2, 6, 23, 0.32); }
+    h1 { font-size: 1.4rem; color: #fff; }
+    h1 span { color: rgba(255,255,255,0.78); font-weight: 300; }
+    .stats { color: rgba(255,255,255,0.78); font-size: 0.85rem; background: rgba(13,17,23,0.22); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 0.35rem 0.7rem; }
     
     .filters { display: flex; gap: 0.5rem; padding: 1rem 2rem; background: #161b22; border-bottom: 1px solid #30363d; flex-wrap: wrap; }
     .filters button { padding: 0.5rem 1rem; border: 1px solid #30363d; border-radius: 20px; background: transparent; color: #8b949e; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
     .filters button:hover { border-color: #58a6ff; color: #58a6ff; }
     .filters button.active { background: #58a6ff; color: #0d1117; border-color: #58a6ff; }
     
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.35rem; padding: 1.75rem 2rem; max-width: 1400px; margin: 0 auto; }
     
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.7rem; transition: border-color 0.2s; }
-    .card:hover { border-color: #58a6ff; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 28px rgba(1, 4, 9, 0.32); transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease; }
+    .card:hover { border-color: #58a6ff; transform: translateY(-4px) scale(1.012); box-shadow: 0 22px 52px rgba(1, 4, 9, 0.48), 0 0 0 1px rgba(88,166,255,0.22); }
+    .card-media { position: relative; width: 100%; height: 180px; border-radius: 10px 10px 0 0; overflow: hidden; background-size: cover; background-position: center; flex-shrink: 0; }
+    .card-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.28s ease, filter 0.28s ease; }
+    .card:hover .card-media img { transform: scale(1.04); filter: saturate(1.06); }
+    .media-fallback::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 18% 18%, rgba(255,255,255,0.34), transparent 28%), radial-gradient(circle at 84% 72%, rgba(255,255,255,0.18), transparent 32%); }
+    .gradient-tech { background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 54%, #22d3ee 100%); }
+    .gradient-geo { background: linear-gradient(135deg, #f97316 0%, #dc2626 55%, #f59e0b 100%); }
+    .gradient-tech-geo { background: linear-gradient(135deg, #7c3aed 0%, #2563eb 48%, #14b8a6 100%); }
+    .card-body { display: flex; flex: 1; flex-direction: column; gap: 0.8rem; padding: 1.15rem 1.25rem 1.25rem; }
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
-    .card-title { font-size: 0.95rem; font-weight: 600; color: #e6edf3; line-height: 1.4; flex: 1; }
+    .card-title { font-size: 1rem; font-weight: 600; color: #e6edf3; line-height: 1.45; flex: 1; }
     .card-title a { color: inherit; text-decoration: none; }
     .card-title a:hover { color: #58a6ff; }
     .badge { padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
@@ -40,9 +48,10 @@
     /* Modal */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
     .modal-overlay.active { display: flex; }
-    .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.5rem; max-width: 500px; width: 100%; }
-    .modal h2 { font-size: 1rem; color: #58a6ff; margin-bottom: 1rem; }
-    .modal textarea { width: 100%; min-height: 120px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; padding: 0.8rem; font-size: 0.9rem; resize: vertical; font-family: inherit; line-height: 1.5; }
+    .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.75rem; max-width: 760px; max-height: calc(100vh - 2rem); overflow: auto; width: 100%; box-shadow: 0 24px 70px rgba(1, 4, 9, 0.62); }
+    .modal h2 { font-size: 1rem; color: #58a6ff; margin-bottom: 0.55rem; }
+    .modal-article-title { color: #e6edf3; font-size: 1.08rem; font-weight: 650; line-height: 1.35; margin-bottom: 1rem; }
+    .modal textarea { width: 100%; min-height: 220px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; padding: 0.9rem; font-size: 0.95rem; resize: vertical; font-family: inherit; line-height: 1.5; }
     .modal-chars { font-size: 0.75rem; color: #8b949e; margin-top: 0.3rem; text-align: right; }
     .modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end; }
     .modal-actions button { padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-size: 0.85rem; }
@@ -56,6 +65,14 @@
     .loading { text-align: center; padding: 4rem; color: #8b949e; }
     .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 640px) {
+      header, .filters { padding-left: 1rem; padding-right: 1rem; }
+      .grid { grid-template-columns: 1fr; padding: 1rem; }
+      .modal { padding: 1.25rem; }
+      .modal-actions { flex-wrap: wrap; }
+      .modal-actions button { flex: 1 1 auto; }
+    }
   </style>
 </head>
 <body>
@@ -65,10 +82,10 @@
   </header>
   
   <div class="filters">
-    <button class="active" data-cat="all">Tous</button>
-    <button data-cat="tech">🔧 Tech</button>
-    <button data-cat="geo">🌍 Géopolitique</button>
-    <button data-cat="tech-geo">⚡ Tech & Géo</button>
+    <button class="active" data-cat="all" data-label="Tous">Tous</button>
+    <button data-cat="tech" data-label="🔧 Tech">🔧 Tech</button>
+    <button data-cat="geo" data-label="🌍 Géopolitique">🌍 Géopolitique</button>
+    <button data-cat="tech-geo" data-label="⚡ Tech & Géo">⚡ Tech & Géo</button>
   </div>
   
   <div class="grid" id="grid">
@@ -78,6 +95,7 @@
   <div class="modal-overlay" id="modal">
     <div class="modal">
       <h2>📝 Message Club IA</h2>
+      <div class="modal-article-title" id="modal-title"></div>
       <textarea id="msg-text" readonly></textarea>
       <div class="modal-chars" id="msg-chars"></div>
       <div class="modal-actions">
@@ -96,30 +114,89 @@
       try {
         const res = await fetch('/api/news');
         const data = await res.json();
-        allArticles = data.articles;
+        allArticles = data.articles || [];
         document.getElementById('stats').textContent = `${data.count} articles • ${new Date().toLocaleTimeString('fr-FR')}`;
-        render(allArticles);
+        updateFilterCounts();
+        renderCurrentFilter();
       } catch (e) {
         document.getElementById('grid').innerHTML = `<div class="loading" style="color:#f85149">Erreur: ${e.message}</div>`;
       }
     }
 
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      }[ch]));
+    }
+
+    function categoryKey(category) {
+      return ['tech', 'geo', 'tech-geo'].includes(category) ? category : 'tech';
+    }
+
+    function categoryLabel(category) {
+      return { tech: 'Tech', geo: 'Géo', 'tech-geo': 'Tech&Géo' }[categoryKey(category)];
+    }
+
+    function mediaMarkup(article, category) {
+      const image = typeof article.image === 'string' ? article.image.trim() : '';
+      if (!image) {
+        return `<div class="card-media media-fallback gradient-${category}" aria-hidden="true"></div>`;
+      }
+      return `
+        <div class="card-media gradient-${category}">
+          <img src="${escapeHtml(image)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('media-fallback'); this.remove();">
+        </div>
+      `;
+    }
+
+    function updateFilterCounts() {
+      const counts = allArticles.reduce((acc, article) => {
+        const cat = categoryKey(article.category);
+        acc[cat] = (acc[cat] || 0) + 1;
+        return acc;
+      }, { tech: 0, geo: 0, 'tech-geo': 0 });
+
+      document.querySelectorAll('.filters button').forEach(btn => {
+        const cat = btn.dataset.cat;
+        const count = cat === 'all' ? allArticles.length : counts[cat] || 0;
+        btn.textContent = `${btn.dataset.label} (${count})`;
+      });
+    }
+
+    function renderCurrentFilter() {
+      const active = document.querySelector('.filters button.active');
+      const cat = active ? active.dataset.cat : 'all';
+      render(cat === 'all' ? allArticles : allArticles.filter(a => categoryKey(a.category) === cat));
+    }
+
     function render(articles) {
       const grid = document.getElementById('grid');
       if (!articles.length) { grid.innerHTML = '<div class="loading">Aucun article</div>'; return; }
-      grid.innerHTML = articles.map((a, i) => `
+      grid.innerHTML = articles.map((a, i) => {
+        const category = categoryKey(a.category);
+        const originalIndex = allArticles.indexOf(a);
+        const articleIndex = originalIndex >= 0 ? originalIndex : i;
+        return `
         <div class="card">
-          <div class="card-header">
-            <div class="card-title"><a href="${a.url}" target="_blank">${a.title}</a></div>
-            <span class="badge badge-${a.category}">${{tech:'Tech',geo:'Géo','tech-geo':'Tech&Géo'}[a.category]}</span>
-          </div>
-          <div class="card-summary">${a.summary}</div>
-          <div class="card-footer">
-            <span class="card-meta">${a.source} • ${a.date ? new Date(a.date).toLocaleDateString('fr-FR') : ''}</span>
-            <button class="btn-club" onclick="generate(${i})">📝 Club IA</button>
+          ${mediaMarkup(a, category)}
+          <div class="card-body">
+            <div class="card-header">
+              <div class="card-title"><a href="${escapeHtml(a.url)}" target="_blank">${escapeHtml(a.title)}</a></div>
+              <span class="badge badge-${category}">${categoryLabel(category)}</span>
+            </div>
+            <div class="card-summary">${escapeHtml(a.summary)}</div>
+            <div class="card-footer">
+              <span class="card-meta">${escapeHtml(a.source)} • ${a.date ? new Date(a.date).toLocaleDateString('fr-FR') : ''}</span>
+              <button class="btn-club" data-index="${articleIndex}" onclick="generate(${articleIndex}, this)">📝 Club IA</button>
+            </div>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     // Filters
@@ -127,15 +204,15 @@
       btn.addEventListener('click', () => {
         document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const cat = btn.dataset.cat;
-        render(cat === 'all' ? allArticles : allArticles.filter(a => a.category === cat));
+        renderCurrentFilter();
       });
     });
 
     // Generate message
-    async function generate(idx) {
+    async function generate(idx, clickedButton) {
       currentArticle = allArticles[idx];
-      const btn = document.querySelectorAll('.btn-club')[idx];
+      const btn = clickedButton || document.querySelector(`.btn-club[data-index="${idx}"]`) || document.querySelectorAll('.btn-club')[idx];
+      if (!currentArticle || !btn) return;
       btn.disabled = true; btn.textContent = '⏳';
       try {
         const res = await fetch('/api/generate-message', {
@@ -174,6 +251,7 @@
     }
 
     function showModal(msg, chars) {
+      document.getElementById('modal-title').textContent = currentArticle ? currentArticle.title : '';
       document.getElementById('msg-text').value = msg;
       document.getElementById('msg-chars').textContent = `${chars} caractères`;
       document.getElementById('modal').classList.add('active');

@@ -3,7 +3,15 @@ const Parser = require('rss-parser');
 const path = require('path');
 
 const app = express();
-const parser = new Parser({ timeout: 10000 });
+const parser = new Parser({
+  timeout: 10000,
+  customFields: {
+    item: [
+      ['media:content', 'media:content', { keepArray: true }],
+      ['media:thumbnail', 'media:thumbnail', { keepArray: true }],
+    ],
+  },
+});
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -33,6 +41,67 @@ function classify(title, summary, feedCat) {
   if (isTech && isGeo) return 'tech-geo';
   if (isGeo) return 'geo';
   return 'tech';
+}
+
+function normalizeImageUrl(value, baseUrl) {
+  if (typeof value !== 'string') return null;
+
+  const cleanValue = value.trim().replace(/&amp;/g, '&');
+  if (!cleanValue) return null;
+
+  try {
+    const imageUrl = cleanValue.startsWith('//')
+      ? new URL(`https:${cleanValue}`)
+      : new URL(cleanValue, baseUrl || undefined);
+
+    return imageUrl.protocol === 'http:' || imageUrl.protocol === 'https:'
+      ? imageUrl.href
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractMediaUrl(mediaField, baseUrl) {
+  if (!mediaField) return null;
+
+  const mediaItems = Array.isArray(mediaField) ? mediaField : [mediaField];
+  for (const mediaItem of mediaItems) {
+    if (!mediaItem) continue;
+
+    if (typeof mediaItem === 'string') {
+      const url = normalizeImageUrl(mediaItem, baseUrl);
+      if (url) return url;
+      continue;
+    }
+
+    const directUrl = normalizeImageUrl(mediaItem.url, baseUrl)
+      || normalizeImageUrl(mediaItem.href, baseUrl)
+      || normalizeImageUrl(mediaItem.$?.url, baseUrl)
+      || normalizeImageUrl(mediaItem.$?.href, baseUrl);
+
+    if (directUrl) return directUrl;
+  }
+
+  return null;
+}
+
+function extractImageFromContent(content, baseUrl) {
+  if (typeof content !== 'string') return null;
+
+  const match = content.match(/<img\b[^>]*\bsrc=["']?([^"'\s>]+)["']?[^>]*>/i);
+  return match ? normalizeImageUrl(match[1], baseUrl) : null;
+}
+
+function extractArticleImage(item) {
+  const baseUrl = item.link || item.guid || '';
+
+  return normalizeImageUrl(item.enclosure?.url, baseUrl)
+    || extractMediaUrl(item['media:content'], baseUrl)
+    || extractMediaUrl(item['media:thumbnail'], baseUrl)
+    || extractImageFromContent(item.content, baseUrl)
+    || extractImageFromContent(item['content:encoded'], baseUrl)
+    || null;
 }
 
 function stripHtmlTags(value) {
@@ -88,6 +157,7 @@ async function fetchAllFeeds() {
           title: item.title || '',
           summary: (item.contentSnippet || item.content || '').slice(0, 300),
           url: item.link || '',
+          image: extractArticleImage(item),
           date: item.isoDate || item.pubDate || '',
           source: f.source,
           category: classify(item.title || '', item.contentSnippet || '', f.cat),
