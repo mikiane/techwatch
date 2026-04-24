@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechWatch — Veille Géopolitique & Tech</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+    
+    header { background: #161b22; border-bottom: 1px solid #30363d; padding: 1.2rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    h1 { font-size: 1.4rem; color: #58a6ff; }
+    h1 span { color: #c9d1d9; font-weight: 300; }
+    .stats { color: #8b949e; font-size: 0.85rem; }
+    
+    .filters { display: flex; gap: 0.5rem; padding: 1rem 2rem; background: #161b22; border-bottom: 1px solid #30363d; flex-wrap: wrap; }
+    .filters button { padding: 0.5rem 1rem; border: 1px solid #30363d; border-radius: 20px; background: transparent; color: #8b949e; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+    .filters button:hover { border-color: #58a6ff; color: #58a6ff; }
+    .filters button.active { background: #58a6ff; color: #0d1117; border-color: #58a6ff; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+    
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.2rem; display: flex; flex-direction: column; gap: 0.7rem; transition: border-color 0.2s; }
+    .card:hover { border-color: #58a6ff; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+    .card-title { font-size: 0.95rem; font-weight: 600; color: #e6edf3; line-height: 1.4; flex: 1; }
+    .card-title a { color: inherit; text-decoration: none; }
+    .card-title a:hover { color: #58a6ff; }
+    .badge { padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+    .badge-tech { background: #1f3a5f; color: #58a6ff; }
+    .badge-geo { background: #3b2f1a; color: #f0883e; }
+    .badge-tech-geo { background: #2a1f3f; color: #bc8cff; }
+    .card-summary { font-size: 0.82rem; color: #8b949e; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 0.5rem; border-top: 1px solid #21262d; }
+    .card-meta { font-size: 0.75rem; color: #484f58; }
+    .btn-club { padding: 0.4rem 0.8rem; border: 1px solid #30363d; border-radius: 6px; background: #21262d; color: #c9d1d9; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+    .btn-club:hover { background: #58a6ff; color: #0d1117; border-color: #58a6ff; }
+    .btn-club:disabled { opacity: 0.5; cursor: wait; }
+    
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 1.5rem; max-width: 500px; width: 100%; }
+    .modal h2 { font-size: 1rem; color: #58a6ff; margin-bottom: 1rem; }
+    .modal textarea { width: 100%; min-height: 120px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9; padding: 0.8rem; font-size: 0.9rem; resize: vertical; font-family: inherit; line-height: 1.5; }
+    .modal-chars { font-size: 0.75rem; color: #8b949e; margin-top: 0.3rem; text-align: right; }
+    .modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end; }
+    .modal-actions button { padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid #30363d; cursor: pointer; font-size: 0.85rem; }
+    .btn-copy { background: #238636; color: #fff; border-color: #238636; }
+    .btn-copy:hover { background: #2ea043; }
+    .btn-regen { background: #21262d; color: #c9d1d9; }
+    .btn-regen:hover { background: #30363d; }
+    .btn-close { background: transparent; color: #8b949e; }
+    .btn-close:hover { color: #c9d1d9; }
+
+    .loading { text-align: center; padding: 4rem; color: #8b949e; }
+    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚡ TechWatch <span>Géopolitique & Tech</span></h1>
+    <div class="stats" id="stats">Chargement...</div>
+  </header>
+  
+  <div class="filters">
+    <button class="active" data-cat="all">Tous</button>
+    <button data-cat="tech">🔧 Tech</button>
+    <button data-cat="geo">🌍 Géopolitique</button>
+    <button data-cat="tech-geo">⚡ Tech & Géo</button>
+  </div>
+  
+  <div class="grid" id="grid">
+    <div class="loading"><div class="spinner"></div><p style="margin-top:1rem">Agrégation des flux RSS...</p></div>
+  </div>
+  
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h2>📝 Message Club IA</h2>
+      <textarea id="msg-text" readonly></textarea>
+      <div class="modal-chars" id="msg-chars"></div>
+      <div class="modal-actions">
+        <button class="btn-close" onclick="closeModal()">Fermer</button>
+        <button class="btn-regen" id="btn-regen" onclick="regenerate()">🔄 Regénérer</button>
+        <button class="btn-copy" onclick="copyMsg()">📋 Copier</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allArticles = [];
+    let currentArticle = null;
+
+    async function loadNews() {
+      try {
+        const res = await fetch('/api/news');
+        const data = await res.json();
+        allArticles = data.articles;
+        document.getElementById('stats').textContent = `${data.count} articles • ${new Date().toLocaleTimeString('fr-FR')}`;
+        render(allArticles);
+      } catch (e) {
+        document.getElementById('grid').innerHTML = `<div class="loading" style="color:#f85149">Erreur: ${e.message}</div>`;
+      }
+    }
+
+    function render(articles) {
+      const grid = document.getElementById('grid');
+      if (!articles.length) { grid.innerHTML = '<div class="loading">Aucun article</div>'; return; }
+      grid.innerHTML = articles.map((a, i) => `
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><a href="${a.url}" target="_blank">${a.title}</a></div>
+            <span class="badge badge-${a.category}">${{tech:'Tech',geo:'Géo','tech-geo':'Tech&Géo'}[a.category]}</span>
+          </div>
+          <div class="card-summary">${a.summary}</div>
+          <div class="card-footer">
+            <span class="card-meta">${a.source} • ${a.date ? new Date(a.date).toLocaleDateString('fr-FR') : ''}</span>
+            <button class="btn-club" onclick="generate(${i})">📝 Club IA</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Filters
+    document.querySelectorAll('.filters button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const cat = btn.dataset.cat;
+        render(cat === 'all' ? allArticles : allArticles.filter(a => a.category === cat));
+      });
+    });
+
+    // Generate message
+    async function generate(idx) {
+      currentArticle = allArticles[idx];
+      const btn = document.querySelectorAll('.btn-club')[idx];
+      btn.disabled = true; btn.textContent = '⏳';
+      try {
+        const res = await fetch('/api/generate-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: currentArticle.title, summary: currentArticle.summary, url: currentArticle.url }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        showModal(data.message, data.chars);
+      } catch (e) {
+        alert('Erreur: ' + e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = '📝 Club IA';
+      }
+    }
+
+    async function regenerate() {
+      if (!currentArticle) return;
+      document.getElementById('btn-regen').disabled = true;
+      document.getElementById('msg-text').value = 'Regénération...';
+      try {
+        const res = await fetch('/api/generate-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: currentArticle.title, summary: currentArticle.summary, url: currentArticle.url }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        showModal(data.message, data.chars);
+      } catch (e) {
+        alert('Erreur: ' + e.message);
+      } finally {
+        document.getElementById('btn-regen').disabled = false;
+      }
+    }
+
+    function showModal(msg, chars) {
+      document.getElementById('msg-text').value = msg;
+      document.getElementById('msg-chars').textContent = `${chars} caractères`;
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal() { document.getElementById('modal').classList.remove('active'); }
+    function copyMsg() {
+      const t = document.getElementById('msg-text');
+      t.select(); navigator.clipboard.writeText(t.value);
+      const btn = document.querySelector('.btn-copy');
+      btn.textContent = '✅ Copié !'; setTimeout(() => btn.textContent = '📋 Copier', 1500);
+    }
+
+    document.getElementById('modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    loadNews();
+    setInterval(loadNews, 10 * 60 * 1000); // refresh every 10 min
+  </script>
+</body>
+</html>

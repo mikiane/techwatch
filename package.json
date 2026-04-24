@@ -1,0 +1,13 @@
+{
+  "name": "techwatch",
+  "version": "1.0.0",
+  "description": "Agrégateur news géopolitique/tech avec génération messages IA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "rss-parser": "^3.13.0"
+  }
+}
